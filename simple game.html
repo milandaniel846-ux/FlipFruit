@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>🍓 Fruit Memory Game</title>
+<style>
+  body {
+    background: linear-gradient(135deg, #ffecd2, #fcb69f);
+    background-size: 400% 400%;
+    animation: gradientShift 10s ease infinite;
+    font-family: "Poppins", sans-serif;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  header img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid #0d47a1;
+    margin-top: 20px;
+    box-shadow: 0 0 20px rgba(13, 71, 161, 0.5);
+  }
+
+  h1 {
+    color: #0d47a1;
+    font-size: 30px;
+    margin: 10px 0;
+  }
+
+  marquee {
+    background-color: #0d47a1;
+    color: white;
+    padding: 10px;
+    font-weight: bold;
+  }
+
+  .difficulty {
+    margin: 15px 0;
+  }
+
+  .difficulty button {
+    background: #1565c0;
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 0 5px;
+    font-size: 15px;
+    transition: 0.3s;
+  }
+
+  .difficulty button.active {
+    background: #00c853;
+  }
+
+  .difficulty button:hover {
+    background: #0d47a1;
+    transform: scale(1.05);
+  }
+
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin: 15px 0;
+    color: #0d47a1;
+    font-size: 18px;
+    font-weight: bold;
+    flex-wrap: wrap;
+  }
+
+  .game-board {
+    display: grid;
+    grid-gap: 10px;
+    justify-content: center;
+    margin: 20px auto;
+    perspective: 1000px;
+  }
+
+  .card {
+    width: 100px;
+    height: 100px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+    cursor: pointer;
+  }
+
+  .card.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    backface-visibility: hidden;
+    border: 2px solid #0d47a1;
+  }
+
+  .card-front {
+    background-color: #64b5f6;
+  }
+
+  .card-back {
+    background-color: #ffffff;
+    transform: rotateY(180deg);
+    color: #1565c0;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+  }
+
+  .matched {
+    animation: fadeOut 0.8s forwards ease;
+  }
+
+  @keyframes fadeOut {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.5); }
+  }
+
+  button.restart {
+    background: #1565c0;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+  }
+
+  button.restart:hover {
+    background: #0d47a1;
+    transform: scale(1.05);
+  }
+
+  footer {
+    margin-top: 40px;
+    font-size: 14px;
+    color: #0d47a1;
+    line-height: 1.5;
+  }
+
+  #successModal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: flex; justify-content: center; align-items: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.5s ease;
+    z-index: 999;
+  }
+
+  #successModal.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .modal-content {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    animation: popIn 0.5s ease;
+  }
+
+  @keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  #goodEffect {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    font-size: 60px;
+    color: #ffeb3b;
+    text-shadow: 2px 2px 10px #0d47a1;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.5s ease;
+    z-index: 1000;
+  }
+
+  #goodEffect.show {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
+  }
+
+  .confetti {
+    position: fixed;
+    width: 10px;
+    height: 10px;
+    top: 0;
+    z-index: 1000;
+    opacity: 0.8;
+    animation: fall 3s linear forwards;
+  }
+
+  @keyframes fall {
+    0% { transform: translateY(0) rotate(0deg); }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* Added form styling */
+  form {
+    margin: 20px auto 40px auto;
+    max-width: 300px;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+    font-family: Arial, sans-serif;
+  }
+
+  label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+  }
+
+  input[type="text"]:focus {
+    outline: none;
+  }
+
+  #errorMsg {
+    color: red;
+    font-size: 14px;
+    margin-top: 5px;
+    min-height: 18px;
+    text-align: left;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="/mnt/data/d68187d7-2682-4fff-9451-80fadf45b027.png" alt="Colegio De Montalban Logo">
+  <h1>🍇 Fruit Memory Game</h1>
+</header>
+
+<marquee>
+  🎓 Welcome to the Fruit Memory Game by Daniel Sto. Domingo Jr., Frtichgerald Galan, and Ron Angelo Albar! |
+  Match all fruits to test your memory! 🍎🍌🍇🍊
+</marquee>
+
+<!-- Added form here -->
+<form id="myForm">
+  <label for="nameInput">Name:</label>
+  <input type="text" id="nameInput" placeholder="Enter your name" />
+  <div id="errorMsg"></div>
+</form>
+
+<div class="difficulty">
+  <button data-level="easy" class="active">🟢 Easy</button>
+  <button data-level="medium">🟡 Medium</button>
+  <button data-level="hard">🔴 Hard</button>
+</div>
+
+<div class="stats">
+  <div>⏱️ Time: <span id="timer">0</span> s</div>
+  <div>🏆 Best Time: <span id="bestTime">--</span> s</div>
+  <div>🎯 Score: <span id="score">0</span></div>
+</div>
+
+<div class="game-board" id="gameBoard"></div>
+<button class="restart">🔄 Restart Game</button>
+
+<div id="goodEffect">✨ GOOD! ✨</div>
+
+<footer>
+  © 2025 Colegio De Montalban | BSIT Project <br>
+  Developed by <b>Daniel Sto. Domingo Jr.</b> <br>
+  With contributions from <b>Frtichgerald Galan</b> and <b>Ron Angelo Albar</b>
+</footer>
+
+<div id="successModal">
+  <div class="modal-content">
+    <h2>🎉 Congratulations! 🎉</h2>
+    <p>You matched all fruits in <span id="finalTime"></span> seconds!</p>
+    <p>Your score: <span id="finalScore"></span></p>
+    <button id="modalClose">Play Again</button>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script>
+  const allSymbols = ['🍎','🍌','🍇','🍊','🍉','🍓','🍍','🥝','🍋','🍒','🥥','🍑','🍐','🍈','🍏','🍅','🥭','🥑'];
+  let difficulty = 'easy', symbols = [], firstCard = null, secondCard = null, lockBoard = false;
+  let timer = 0, timerInterval = null, matchedPairs = 0, score = 0, bestTime = localStorage.getItem('bestTime');
+
+  $(document).ready(function() {
+    const $timerDisplay = $('#timer');
+    const $bestTimeDisplay = $('#bestTime');
+    const $scoreDisplay = $('#score');
+    const $successModal = $('#successModal');
+    const $goodEffect = $('#goodEffect');
+    const $nameInput = $('#nameInput');
+    const $errorMsg = $('#errorMsg');
+
+    if (bestTime) $bestTimeDisplay.text(bestTime);
+
+    function startGame() {
+      const $board = $('#gameBoard');
+      $board.empty();
+      matchedPairs = 0; score = 0; timer = 0;
+      $timerDisplay.text(0);
+      $scoreDisplay.text(0);
+      clearInterval(timerInterval);
+      timerInterval = setInterval(() => $timerDisplay.text(++timer), 1000);
+
+      let pairs;
+      if (difficulty === 'easy') { pairs = 8; $board.css('grid-template-columns', 'repeat(4, 100px)'); }
+      else if (difficulty === 'medium') { pairs = 10; $board.css('grid-template-columns', 'repeat(5, 100px)'); }
+      else { pairs = 18; $board.css('grid-template-columns', 'repeat(6, 90px)'); }
+
+      symbols = allSymbols.slice(0, pairs);
+      const cards = [...symbols, ...symbols].sort(() => 0.5 - Math.random());
+
+      cards.forEach(symbol => {
+        const $card = $(`
+          <div class="card">
+            <div class="card-face card-front"></div>
+            <div class="card-face card-back">${symbol}</div>
+          </div>
+        `);
+        $card.on('click', flipCard);
+        $board.append($card);
+      });
+    }
+
+    function flipCard() {
+      const $this = $(this);
+      if (lockBoard || $this.is(firstCard)) return;
+      $this.addClass('flipped');
+      if (!firstCard) { firstCard = $this; return; }
+      secondCard = $this;
+      checkMatch();
+    }
+
+    function checkMatch() {
+      const match = firstCard.find('.card-back').text() === secondCard.find('.card-back').text();
+      match ? handleMatch() : handleNoMatch();
+    }
+
+    function handleMatch() {
+      lockBoard = true;
+      matchedPairs++; score += 10; $scoreDisplay.text(score);
+      firstCard.addClass('matched'); secondCard.addClass('matched');
+      showGoodEffect();
+
+      setTimeout(() => {
+        firstCard.remove(); secondCard.remove();
+        resetBoard(); lockBoard = false;
+        if (matchedPairs === symbols.length) {
+          clearInterval(timerInterval);
+          showSuccess(); checkBestTime();
+        }
+      }, 700);
+    }
+
+    function handleNoMatch() {
+      lockBoard = true;
+      score -= 2; $scoreDisplay.text(score);
+      setTimeout(() => {
+        firstCard.removeClass('flipped');
+        secondCard.removeClass('flipped');
+        resetBoard();
+      }, 1000);
+    }
+
+    function resetBoard() { [firstCard, secondCard, lockBoard] = [null, null, false]; }
+
+    function showGoodEffect() {
+      $goodEffect.addClass('show');
+      setTimeout(() => $goodEffect.removeClass('show'), 800);
+    }
+
+    function checkBestTime() {
+      if (!bestTime || timer < bestTime) {
+        bestTime = timer;
+        localStorage.setItem('bestTime', bestTime);
+        $bestTimeDisplay.text(bestTime);
+      }
+    }
+
+    function showSuccess() {
+      $('#finalTime').text(timer);
+      $('#finalScore').text(score);
+      $successModal.addClass('show');
+      createConfetti();
+    }
+
+    function createConfetti() {
+      for (let i = 0; i < 100; i++) {
+        const $confetti = $('<div class="confetti"></div>');
+        $confetti.css({
+          left: Math.random() * $(window).width(),
+          backgroundColor: `hsl(${Math.random() * 360}, 100%, 50%)`,
+          animationDuration: 2 + Math.random() * 3 + 's'
+        });
+        $('body').append($confetti);
+        setTimeout(() => $confetti.remove(), 4000);
+      }
+    }
+
+    // Difficulty button click
+    $('.difficulty button').click(function() {
+      difficulty = $(this).data('level');
+      $('.difficulty button').removeClass('active');
+      $(this).addClass('active');
+      startGame();
+    });
+
+    // Restart button
+    $('.restart').click(function() {
+      startGame();
+    });
+
+    // Modal close button
+    $('#modalClose').click(function() {
+      $successModal.removeClass('show');
+      startGame();
+    });
+
+    // Validation for name input to disallow numbers and special characters
+    $nameInput.on('input', function () {
+      const value = $(this).val();
+      // Regex: allow only letters (a-zA-Z) and spaces
+      const valid = /^[a-zA-Z\s]*$/.test(value);
+
+      if (!valid) {
+        $(this).css('border-color', 'red');
+        $errorMsg.text('Only letters and spaces are allowed. No numbers or special characters.');
+      } else if (value.trim() === '') {
+        $(this).css('border-color', 'red');
+        $errorMsg.text('This field cannot be empty.');
+      } else {
+        $(this).css('border-color', 'green');
+        $errorMsg.text('');
+      }
+    });
+
+    startGame();
+  });
+</script>
+</body>
+</html>
